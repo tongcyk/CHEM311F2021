@@ -1,0 +1,78 @@
+### CHEM 311: Titrating with a Calibrated Burette
+### Example Code
+## CALIBRATION
+
+# RAW DATA
+# constants
+TempCorr <- 1.0033 # temperature correction factor; at 22 C, there are 1.0033 g/mL H2O
+
+# data, not very tidy :(
+
+ReadVol_H2O <- c(0, 10.00, 20.00, 30.00, 40.00, 50.00) # read volume where i close stopcock
+
+ # trial 1
+MassT1_Bottle <- 9.7031
+MassT1_BottleH2O <- c(9.7031, 19.5885, 29.6034, 39.6029, 49.5443, 59.4978)
+MassT1_H2O <- MassT1_BottleH2O - MassT1_Bottle # taring out bottle mass
+
+# trial 2
+MassT2_Bottle <- 9.7215
+MassT2_BottleH2O <- c(9.7215,19.7771, 29.7119, 39.7059, 49.6609, 59.5862)
+MassT2_H2O <- MassT2_BottleH2O - MassT2_Bottle
+
+# trial 3
+MassT3_Bottle <- 9.7406
+MassT3_BottleH2O <- c(9.7406, 19.7587, 29.7316, 39.7352, 49.6874, 59.5977)
+MassT3_H2O <- MassT3_BottleH2O - MassT3_Bottle
+
+AvgMass_H2O <- (MassT1_H2O + MassT2_H2O + MassT3_H2O)/3
+AvgMass_H2O
+
+TCVolume_H2O <- AvgMass_H2O / TempCorr
+
+# ACTIVITY 1: RAW DATA DATAFRAME
+
+RawData_BuretCalibration <- data.frame (ReadVol_H2O, AvgMass_H2O, TempCorr) # creating a dataframe from the volume read, the avg. mass of h2o, and the temp correction factor
+
+# ACTIVITY 2: TRUE VOLUME DATAFRAME
+
+# base r dataframe using cbind
+
+# Data_BuretCalibration = cbind(RawData_BuretCalibration, "TCVol_H2O" = c(RawData_BuretCalibration$AvgMass_H2O * RawData_BuretCalibration$TempCorr))
+# Data_BuretCalibration
+
+# tidyverse dataframe using mutate
+Data_BuretCalibration <- RawData_BuretCalibration %>%
+  mutate("TCVol_H2O" = AvgMass_H2O * TempCorr) # adding the temp-corrected H2O vol column, AvgMass*TempCorr
+Data_BuretCalibration
+
+## TITRATION
+
+# data
+# do this in a spreadsheet and import it as a .csv or you will be in pain
+vol_HCl_tit1_unc <- c(0.11, 0.65, 1.00, 1.40, 1.78, 2.28, 2.49, 3.21, 3.58, 3.88, 4.58, 5.13, 5.59, 6.00, 6.61, 7.00, 7.31, 7.5, 8.12, 8.39, 8.69, 8.88, 9.26, 9.36, 9.50, 9.62, 9.85, 10.01, 10.12, 10.21, 10.36, 10.49, 10.60, 10.71, 10.89, 10.96, 11.06, 11.09, 11.15, 11.28, 11.31, 11.40, 11.51, 11.6, 11.65, 11.72, 11.77, 11.89, 11.93, 12.17, 12.19, 12.29, 12.36, 12.56, 12.69, 12.75, 13.39, 13.71, 13.87, 14.30) # volume data; volume you read on burette
+
+vol_HCl_tit1 <- vol_HCl_tit1_unc - 0.11 # adjusting for initial volume in burette (initially at 0.11, so 0.11 is “0”; it’s like taring your scale)
+n_vol <- length(vol_HCl_tit1) # number of measurements = 34. check length when you’re having trouble making a dataframe due to mismatched number of observations. won’t be a problem if you use a spreadsheet
+
+pH_tit1 <- c(12.61, 12.59, 12.56, 12.54, 12.51, 12.47, 12.43, 12.40, 12.37, 12.34, 12.28, 12.21,12.17, 12.12, 12.02, 11.98, 11.92, 11.88, 11.77, 11.69, 11.58, 11.52, 11.38, 11.30, 11.18, 11.03, 10.83, 10.48, 10.18, 9.89, 9.58, 9.33, 8.99, 8.70, 8.40, 8.18, 7.85, 7.59, 7.30, 6.6, 5.31, 4.69, 4.03, 3.83, 3.66, 3.58, 3.44, 3.29, 3.15, 3.06, 2.99, 2.91, 2.86, 2.81, 2.76, 2.72, 2.56, 2.47, 2.44, 2.41) # pH data for each volume
+
+n_pH_tit1 <- length(pH_tit1) # number of pH measurements = 34. matches number of volume measurements! can make a dataframe!
+
+tit1 <- data.frame(vol_HCl_tit1_unc, vol_HCl_tit1, pH_tit1) # create a dataset to use in ggplot if you’re using ggplot/tidyverse method
+
+# base r plot method
+# plot(vol_HCl_tit1, pH_tit1) 
+
+# ggplot method
+ggplot(data = tit1, aes(x = vol_HCl_tit1, y = pH_tit1)) +
+  geom_point() + # add points
+  theme_bw() + # remove gray background
+  labs(x = "Volume HCl (mL)", y = "pH", title = "Titration 1") # create labels
+
+# calculations: [OH-], [Ca2+], Ksp
+eq_vol_tit1 <- 11.1 # equivalence volume, Ve, in mL. this is a constant
+conc_OH_tit1 <- conc_HCl*eq_vol_tit1/15.00 # concentration of OH- in soln at Ve
+conc_Ca_tit1 <- conc_OH_tit1/2 # concentration of Ca2+ in soln at Ve; since formula is Ca(OH)2, there will be half as much Ca2+ in soln as OH-
+
+Ksp_tit1 <- conc_Ca_tit1*(conc_OH_tit1)^2 # calculation for Ksp = [prod]*[prod]/[rctnt]
